@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+pydantic
+websockets
+pytest
+hypothesis
+pytest-asyncio
+httpx

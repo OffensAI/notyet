@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Web interface for the notyet AWS IAM persistence tool">
+    <meta name="author" content="notyet-web-ui">
+    <title>notyet Web UI - AWS IAM Persistence Tool</title>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/static/styles/main.css">
+    <link rel="stylesheet" href="/static/styles/futuristic.css">
+    <link rel="stylesheet" href="/static/styles/panels.css">
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Header -->
+        <header class="app-header">
+            <h1 class="header-title">notyet Web UI</h1>
+            <p class="header-subtitle">AWS IAM Persistence Tool Monitor</p>
+        </header>
+
+        <!-- Tool Status Banner -->
+        <div id="tool-banner" class="tool-banner tool-banner-stopped" role="status" aria-live="polite">
+            <span class="tool-banner-dot"></span>
+            <span class="tool-banner-text">Tool Stopped</span>
+        </div>
+
+        <!-- Dashboard Grid -->
+        <main class="dashboard">
+            <!-- Left Column: Control + Status + Sessions -->
+            <div class="column column-left">
+                <section class="panel">
+                    <h2 class="panel-title">Control Panel</h2>
+                    <control-panel id="control-panel"></control-panel>
+                </section>
+
+                <section class="panel">
+                    <h2 class="panel-title">Status</h2>
+                    <status-panel id="status-panel"></status-panel>
+                </section>
+
+                <section class="panel">
+                    <h2 class="panel-title">Sessions</h2>
+                    <session-selector id="session-selector"></session-selector>
+                </section>
+            </div>
+
+            <!-- Center Column: Event Log -->
+            <div class="column column-center">
+                <section class="panel panel-full">
+                    <h2 class="panel-title">Event Log</h2>
+                    <log-panel id="log-panel"></log-panel>
+                </section>
+            </div>
+
+            <!-- Right Column: Defender + Attacker -->
+            <div class="column column-right">
+                <section class="panel panel-defender">
+                    <h2 class="panel-title panel-title-red">Defender Actions</h2>
+                    <defender-panel id="defender-panel"></defender-panel>
+                </section>
+
+                <section class="panel panel-attacker">
+                    <h2 class="panel-title panel-title-green">Attacker Responses</h2>
+                    <attacker-panel id="attacker-panel"></attacker-panel>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Connection Status Indicator -->
+    <div id="connection-status" class="connection-indicator" role="status" aria-live="polite">
+        <span class="connection-dot"></span>
+        <span class="connection-text">Connecting...</span>
+    </div>
+
+    <!-- Error Notification Container -->
+    <div id="error-notifications" class="notification-container" role="alert" aria-live="assertive"></div>
+
+    <!-- JavaScript Modules -->
+    <script type="module" src="/static/js/components/control-panel.js"></script>
+    <script type="module" src="/static/js/components/status-panel.js"></script>
+    <script type="module" src="/static/js/components/log-panel.js"></script>
+    <script type="module" src="/static/js/components/defender-panel.js"></script>
+    <script type="module" src="/static/js/components/attacker-panel.js"></script>
+    <script type="module" src="/static/js/components/session-selector.js"></script>
+    <script type="module" src="/static/js/websocket-client.js"></script>
+    <script type="module" src="/static/js/utils.js"></script>
+    <script type="module" src="/static/js/app.js"></script>
+</body>
+</html>

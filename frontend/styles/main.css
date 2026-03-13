@@ -1,0 +1,378 @@
+/**
+ * Main CSS - Global Styles and Layout
+ *
+ * Single layout system using CSS Grid. No Tailwind dependency.
+ */
+
+/* ===== Reset ===== */
+
+*, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 16px;
+    height: 100%;
+}
+
+body {
+    font-family: 'Courier New', Courier, monospace;
+    line-height: 1.6;
+    height: 100%;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+/* ===== App Layout ===== */
+
+.app-layout {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.app-header {
+    flex-shrink: 0;
+    padding: 1rem 1.5rem;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid rgba(0, 217, 255, 0.3);
+}
+
+.header-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--accent-cyan);
+    text-shadow: 0 0 10px rgba(0, 217, 255, 0.5);
+    line-height: 1.2;
+}
+
+.header-subtitle {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+}
+
+/* ===== Tool Status Banner ===== */
+
+.tool-banner {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    transition: all 0.3s ease;
+}
+
+.tool-banner-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.tool-banner-stopped {
+    background: rgba(255, 0, 68, 0.1);
+    border-bottom: 1px solid rgba(255, 0, 68, 0.4);
+    color: var(--accent-red);
+}
+
+.tool-banner-stopped .tool-banner-dot {
+    background: var(--accent-red);
+    box-shadow: 0 0 6px rgba(255, 0, 68, 0.6);
+}
+
+.tool-banner-running {
+    background: rgba(0, 255, 136, 0.08);
+    border-bottom: 1px solid rgba(0, 255, 136, 0.3);
+    color: var(--accent-green);
+}
+
+.tool-banner-running .tool-banner-dot {
+    background: var(--accent-green);
+    box-shadow: 0 0 6px rgba(0, 255, 136, 0.6);
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.tool-banner-error {
+    background: rgba(255, 0, 68, 0.15);
+    border-bottom: 1px solid rgba(255, 0, 68, 0.5);
+    color: var(--accent-red);
+}
+
+.tool-banner-error .tool-banner-dot {
+    background: var(--accent-red);
+    box-shadow: 0 0 8px rgba(255, 0, 68, 0.8);
+    animation: pulse 1s ease-in-out infinite;
+}
+
+/* ===== Dashboard Grid ===== */
+
+.dashboard {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 280px 1fr 280px;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    min-height: 0; /* critical for grid children to shrink */
+    overflow: hidden;
+}
+
+/* ===== Columns ===== */
+
+.column {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.column-left {
+    overflow-y: auto;
+}
+
+.column-center {
+    min-height: 0;
+}
+
+.column-right {
+    min-height: 0;
+}
+
+/* ===== Panels ===== */
+
+.panel {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-default);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    transition: border-color 0.3s ease;
+    flex-shrink: 0;
+}
+
+.panel:hover {
+    border-color: rgba(0, 217, 255, 0.4);
+}
+
+/* Full-height panels that fill their column */
+.panel-full {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Defender panel accent */
+.panel-defender {
+    border-color: rgba(255, 0, 68, 0.3);
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.panel-defender:hover {
+    border-color: rgba(255, 0, 68, 0.6);
+}
+
+/* Attacker panel accent */
+.panel-attacker {
+    border-color: rgba(0, 255, 136, 0.3);
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.panel-attacker:hover {
+    border-color: rgba(0, 255, 136, 0.6);
+}
+
+/* ===== Panel Titles ===== */
+
+.panel-title {
+    color: var(--accent-cyan);
+    text-shadow: 0 0 8px rgba(0, 217, 255, 0.4);
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-default);
+}
+
+.panel-title-red {
+    color: var(--accent-red);
+    text-shadow: 0 0 8px rgba(255, 0, 68, 0.4);
+}
+
+.panel-title-green {
+    color: var(--accent-green);
+    text-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
+}
+
+/* ===== Custom elements should be transparent containers ===== */
+
+control-panel,
+status-panel,
+log-panel,
+defender-panel,
+attacker-panel,
+session-selector {
+    display: block;
+}
+
+/* log-panel and defender/attacker panels need to fill and scroll */
+.panel-full log-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.panel-defender defender-panel,
+.panel-attacker attacker-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* ===== Connection Indicator ===== */
+
+.connection-indicator {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    z-index: 50;
+}
+
+.connection-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: var(--text-muted);
+}
+
+.connection-dot.connected {
+    background: var(--accent-green);
+    box-shadow: 0 0 6px rgba(0, 255, 136, 0.6);
+}
+
+.connection-dot.disconnected {
+    background: var(--accent-red);
+}
+
+.connection-text {
+    color: var(--text-secondary);
+}
+
+/* ===== Notifications ===== */
+
+.notification-container {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-width: 400px;
+}
+
+.notification {
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid;
+    font-size: 0.8rem;
+    animation: slideInRight 0.3s ease;
+}
+
+.notification-error {
+    background: rgba(255, 0, 68, 0.15);
+    border-color: var(--accent-red);
+    color: var(--accent-red);
+}
+
+.notification-success {
+    background: rgba(0, 255, 136, 0.15);
+    border-color: var(--accent-green);
+    color: var(--accent-green);
+}
+
+@keyframes slideInRight {
+    from { opacity: 0; transform: translateX(100%); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+/* ===== Scrollbar ===== */
+
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--accent-cyan);
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-blue);
+}
+
+/* Firefox scrollbar */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-cyan) var(--bg-secondary);
+}
+
+/* ===== Responsive ===== */
+
+@media (max-width: 1100px) {
+    .dashboard {
+        grid-template-columns: 1fr;
+        overflow-y: auto;
+    }
+
+    .column {
+        overflow: visible;
+    }
+
+    .panel-full,
+    .panel-defender,
+    .panel-attacker {
+        min-height: 300px;
+    }
+}
+
+/* ===== Utility ===== */
+
+.hidden {
+    display: none !important;
+}

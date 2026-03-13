@@ -1,0 +1,96 @@
+/**
+ * Panels CSS - Component-internal layout helpers
+ *
+ * Minimal styles for internal component layout.
+ * Panel containers (borders, backgrounds) are in main.css.
+ * Theme elements (buttons, inputs, colors) are in futuristic.css.
+ */
+
+/* ===== Log panel internals ===== */
+
+.log-controls {
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-default);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.log-controls-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.log-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.5rem;
+    background: var(--bg-input);
+    border: 1px solid var(--border-default);
+    border-radius: 0.25rem;
+    min-height: 0;
+}
+
+.log-stats {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border-default);
+    color: var(--text-muted);
+    font-size: 0.65rem;
+    flex-shrink: 0;
+}
+
+/* ===== Defender/Attacker panel internals ===== */
+
+.event-count-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-default);
+    flex-shrink: 0;
+}
+
+.event-count-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.events-scroll {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+/* ===== Session selector internals ===== */
+
+.session-meta {
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    background: var(--bg-input);
+    border: 1px solid var(--border-default);
+    border-radius: 0.25rem;
+    font-size: 0.7rem;
+}
+
+.session-meta-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.125rem 0;
+}
+
+.session-meta-label {
+    color: var(--text-muted);
+}
+
+.session-meta-value {
+    color: var(--text-primary);
+    font-family: 'Courier New', Courier, monospace;
+}

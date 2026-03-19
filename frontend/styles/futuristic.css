@@ -2,96 +2,126 @@
  * Futuristic Theme CSS
  *
  * Color palette, glow effects, animations, and form elements.
- * Does NOT style custom element containers (that's handled by main.css panels).
+ * Premium dark theme with glass-morphism and refined accents.
  */
 
 /* ===== CSS Custom Properties ===== */
 
 :root {
-    --bg-primary: #0a0e27;
-    --bg-secondary: #151932;
-    --bg-panel: #1a1f3a;
-    --bg-input: #111530;
+    --bg-primary: #06080f;
+    --bg-secondary: #0c1019;
+    --bg-panel: #0f1320;
+    --bg-input: #0a0e18;
+    --bg-hover: #141828;
+    --bg-glass: rgba(15, 19, 32, 0.85);
 
-    --accent-cyan: #00d9ff;
-    --accent-green: #00ff88;
-    --accent-blue: #0066ff;
-    --accent-red: #ff0044;
-    --accent-yellow: #ffbb00;
+    --accent-cyan: #00d4ff;
+    --accent-green: #00e676;
+    --accent-blue: #3d8bfd;
+    --accent-red: #ff2d55;
+    --accent-yellow: #ffb300;
+    --accent-purple: #b388ff;
 
-    --text-primary: #e0e0e0;
-    --text-secondary: #a0a0a0;
-    --text-muted: #606070;
+    --text-primary: #eaedf3;
+    --text-secondary: #8b92a8;
+    --text-muted: #4a5068;
 
-    --border-default: #2a3050;
+    --border-default: rgba(255, 255, 255, 0.06);
+    --border-hover: rgba(0, 212, 255, 0.25);
+
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
+    --shadow-glow-cyan: 0 0 20px rgba(0, 212, 255, 0.15);
+    --shadow-glow-green: 0 0 20px rgba(0, 230, 118, 0.15);
+    --shadow-glow-red: 0 0 20px rgba(255, 45, 85, 0.15);
+
+    --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.25s ease;
 }
 
 /* ===== Buttons ===== */
 
 .btn {
-    padding: 0.5rem 1rem;
-    min-height: 2.25rem;
-    border: 1px solid;
-    border-radius: 0.25rem;
-    font-family: inherit;
-    font-size: 0.75rem;
+    padding: 0.6rem 1.15rem;
+    min-height: 2.5rem;
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-ui);
+    font-size: 0.8rem;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all var(--transition-fast);
     background: var(--bg-secondary);
     color: var(--text-primary);
+    position: relative;
+    overflow: hidden;
 }
 
 .btn:hover:not(:disabled) {
     transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn:active:not(:disabled) {
+    transform: translateY(0);
 }
 
 .btn:disabled {
-    opacity: 0.4;
+    opacity: 0.35;
     cursor: not-allowed;
 }
 
 .btn-start {
-    background: var(--accent-cyan);
-    border-color: var(--accent-cyan);
-    color: var(--bg-primary);
+    background: linear-gradient(135deg, #00b8d9, #00d4ff);
+    border-color: transparent;
+    color: #000;
     font-weight: 700;
 }
 
 .btn-start:hover:not(:disabled) {
-    box-shadow: 0 0 12px rgba(0, 217, 255, 0.5);
+    box-shadow: 0 4px 20px rgba(0, 212, 255, 0.4);
 }
 
 .btn-stop {
-    background: var(--accent-red);
-    border-color: var(--accent-red);
+    background: linear-gradient(135deg, #cc0033, #ff2d55);
+    border-color: transparent;
     color: #fff;
+    font-weight: 700;
 }
 
 .btn-stop:hover:not(:disabled) {
-    box-shadow: 0 0 12px rgba(255, 0, 68, 0.5);
+    box-shadow: 0 4px 20px rgba(255, 45, 85, 0.4);
 }
 
 .btn-restart {
-    background: var(--accent-yellow);
-    border-color: var(--accent-yellow);
-    color: var(--bg-primary);
+    background: linear-gradient(135deg, #cc8800, #ffb300);
+    border-color: transparent;
+    color: #000;
+    font-weight: 700;
 }
 
 .btn-restart:hover:not(:disabled) {
-    box-shadow: 0 0 12px rgba(255, 187, 0, 0.5);
+    box-shadow: 0 4px 20px rgba(255, 179, 0, 0.4);
 }
 
 .btn-blue {
-    background: var(--accent-blue);
-    border-color: var(--accent-blue);
+    background: linear-gradient(135deg, #2563eb, #3d8bfd);
+    border-color: transparent;
     color: #fff;
+    font-weight: 600;
 }
 
 .btn-blue:hover:not(:disabled) {
-    box-shadow: 0 0 12px rgba(0, 102, 255, 0.5);
+    box-shadow: 0 4px 20px rgba(61, 139, 253, 0.4);
 }
 
 .btn-ghost {
@@ -103,6 +133,7 @@
 .btn-ghost:hover:not(:disabled) {
     border-color: var(--accent-cyan);
     color: var(--accent-cyan);
+    background: rgba(0, 212, 255, 0.06);
 }
 
 /* ===== Form Elements ===== */
@@ -110,67 +141,77 @@
 .form-input,
 .form-select {
     width: 100%;
-    padding: 0.5rem 0.625rem;
-    min-height: 2.25rem;
+    padding: 0.6rem 0.8rem;
+    min-height: 2.5rem;
     background: var(--bg-input);
     border: 1px solid var(--border-default);
-    border-radius: 0.25rem;
+    border-radius: var(--radius-sm);
     color: var(--text-primary);
-    font-family: inherit;
-    font-size: 0.8rem;
-    transition: border-color 0.2s ease;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    transition: all var(--transition-fast);
+}
+
+.form-input::placeholder {
+    color: var(--text-muted);
+    font-family: var(--font-ui);
 }
 
 .form-input:focus,
 .form-select:focus {
     border-color: var(--accent-cyan);
     outline: none;
-    box-shadow: 0 0 0 1px rgba(0, 217, 255, 0.3);
+    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.12);
 }
 
 .form-input.error {
     border-color: var(--accent-red);
+    box-shadow: 0 0 0 3px rgba(255, 45, 85, 0.1);
 }
 
 .form-label {
     display: block;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.35rem;
     color: var(--text-secondary);
+    font-family: var(--font-ui);
     font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
 }
 
 .form-label .required {
     color: var(--accent-red);
-    margin-left: 0.125rem;
+    margin-left: 0.15rem;
 }
 
 .form-checkbox {
-    width: 1rem;
-    height: 1rem;
+    width: 1.1rem;
+    height: 1.1rem;
     accent-color: var(--accent-cyan);
     cursor: pointer;
+    border-radius: 3px;
 }
 
 .checkbox-row {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.6rem;
 }
 
 .checkbox-label {
     color: var(--text-primary);
-    font-size: 0.8rem;
+    font-family: var(--font-ui);
+    font-size: 0.82rem;
     cursor: pointer;
 }
 
 .form-error {
     display: none;
-    margin-top: 0.25rem;
+    margin-top: 0.3rem;
     color: var(--accent-red);
-    font-size: 0.7rem;
+    font-family: var(--font-ui);
+    font-size: 0.75rem;
 }
 
 .form-error.visible {
@@ -178,7 +219,7 @@
 }
 
 .form-group {
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.85rem;
 }
 
 /* ===== Status Indicators ===== */
@@ -186,16 +227,16 @@
 .status-row {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0.75rem;
+    gap: 0.65rem;
+    padding: 0.6rem 0.85rem;
     background: var(--bg-input);
     border: 1px solid var(--border-default);
-    border-radius: 0.25rem;
+    border-radius: var(--radius-sm);
 }
 
 .status-dot {
-    width: 0.625rem;
-    height: 0.625rem;
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
     flex-shrink: 0;
 }
@@ -203,19 +244,21 @@
 .status-dot-gray { background: var(--text-muted); }
 .status-dot-green {
     background: var(--accent-green);
-    box-shadow: 0 0 6px rgba(0, 255, 136, 0.6);
+    box-shadow: 0 0 8px rgba(0, 230, 118, 0.6);
     animation: pulse 2s ease-in-out infinite;
 }
 .status-dot-red {
     background: var(--accent-red);
-    box-shadow: 0 0 6px rgba(255, 0, 68, 0.6);
-    animation: pulse 2s ease-in-out infinite;
+    box-shadow: 0 0 8px rgba(255, 45, 85, 0.6);
+    animation: pulse 1.5s ease-in-out infinite;
 }
 
 .status-label {
-    font-size: 0.8rem;
+    font-family: var(--font-ui);
+    font-size: 0.82rem;
     font-weight: 600;
     text-transform: uppercase;
+    letter-spacing: 0.03em;
 }
 
 .status-label-gray { color: var(--text-muted); }
@@ -228,75 +271,90 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 1.75rem;
-    height: 1.75rem;
-    border-radius: 50%;
-    font-size: 0.75rem;
+    min-width: 2rem;
+    height: 2rem;
+    padding: 0 0.4rem;
+    border-radius: 999px;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
     font-weight: 700;
     flex-shrink: 0;
 }
 
 .count-badge-red {
-    background: rgba(255, 0, 68, 0.2);
+    background: rgba(255, 45, 85, 0.12);
     color: var(--accent-red);
-    border: 1px solid var(--accent-red);
+    border: 1px solid rgba(255, 45, 85, 0.3);
 }
 
 .count-badge-green {
-    background: rgba(0, 255, 136, 0.2);
+    background: rgba(0, 230, 118, 0.12);
     color: var(--accent-green);
-    border: 1px solid var(--accent-green);
+    border: 1px solid rgba(0, 230, 118, 0.3);
 }
 
 /* ===== Filter Buttons ===== */
 
 .filter-btn {
-    padding: 0.25rem 0.5rem;
-    font-size: 0.65rem;
+    padding: 0.3rem 0.65rem;
+    font-family: var(--font-ui);
+    font-size: 0.7rem;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.04em;
     background: var(--bg-input);
     border: 1px solid var(--border-default);
-    border-radius: 0.25rem;
+    border-radius: 999px;
     color: var(--text-muted);
     cursor: pointer;
-    transition: all 0.15s ease;
-    font-family: inherit;
+    transition: all var(--transition-fast);
 }
 
 .filter-btn:hover {
     border-color: var(--accent-cyan);
     color: var(--accent-cyan);
+    background: rgba(0, 212, 255, 0.06);
 }
 
 .filter-btn.active {
     background: var(--accent-cyan);
     border-color: var(--accent-cyan);
-    color: var(--bg-primary);
+    color: #000;
+    box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
 }
 
 /* ===== Animations ===== */
 
 @keyframes pulse {
     0%, 100% { opacity: 1; }
-    50% { opacity: 0.5; }
+    50% { opacity: 0.4; }
 }
 
 @keyframes slideIn {
-    from { opacity: 0; transform: translateY(-8px); }
+    from { opacity: 0; transform: translateY(-6px); }
     to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 /* ===== Log entries ===== */
 
 .log-entry {
     display: flex;
-    gap: 0.5rem;
-    padding: 0.25rem 0.375rem;
-    border-bottom: 1px solid rgba(42, 48, 80, 0.4);
-    font-size: 0.7rem;
-    line-height: 1.4;
+    gap: 0.6rem;
+    padding: 0.4rem 0.55rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    font-size: 0.78rem;
+    line-height: 1.5;
+    transition: background var(--transition-fast);
+    border-radius: 3px;
+}
+
+.log-entry:hover {
+    background: rgba(255, 255, 255, 0.02);
 }
 
 .log-entry:last-child {
@@ -307,12 +365,16 @@
     color: var(--text-muted);
     white-space: nowrap;
     flex-shrink: 0;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
 }
 
 .log-type {
+    font-family: var(--font-mono);
     font-weight: 600;
     white-space: nowrap;
     flex-shrink: 0;
+    font-size: 0.72rem;
 }
 
 .log-type-cyan { color: var(--accent-cyan); }
@@ -323,6 +385,8 @@
 
 .log-text {
     color: var(--text-primary);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
     word-break: break-word;
     min-width: 0;
 }
@@ -330,12 +394,17 @@
 /* ===== Event cards (defender/attacker) ===== */
 
 .event-card {
-    padding: 0.625rem;
+    padding: 0.75rem 0.85rem;
     background: var(--bg-input);
-    border-radius: 0.25rem;
-    margin-bottom: 0.5rem;
+    border-radius: var(--radius-sm);
+    margin-bottom: 0.6rem;
     animation: slideIn 0.2s ease;
     border-left: 3px solid transparent;
+    transition: all var(--transition-fast);
+}
+
+.event-card:hover {
+    background: var(--bg-hover);
 }
 
 .event-card:last-child {
@@ -343,66 +412,84 @@
 }
 
 .event-card-red {
-    border-left-color: var(--accent-red);
-    border: 1px solid rgba(255, 0, 68, 0.2);
+    border: 1px solid rgba(255, 45, 85, 0.15);
     border-left: 3px solid var(--accent-red);
+    background: rgba(255, 45, 85, 0.04);
+}
+
+.event-card-red:hover {
+    border-color: rgba(255, 45, 85, 0.3);
+    background: rgba(255, 45, 85, 0.08);
 }
 
 .event-card-green {
-    border-left-color: var(--accent-green);
-    border: 1px solid rgba(0, 255, 136, 0.2);
+    border: 1px solid rgba(0, 230, 118, 0.15);
     border-left: 3px solid var(--accent-green);
+    background: rgba(0, 230, 118, 0.04);
+}
+
+.event-card-green:hover {
+    border-color: rgba(0, 230, 118, 0.3);
+    background: rgba(0, 230, 118, 0.08);
 }
 
 .event-card-time {
-    font-size: 0.6rem;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
     color: var(--text-muted);
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.3rem;
 }
 
 .event-card-action {
-    font-size: 0.75rem;
+    font-family: var(--font-ui);
+    font-size: 0.82rem;
     font-weight: 600;
-    margin-bottom: 0.125rem;
+    margin-bottom: 0.2rem;
 }
 
 .event-card-action-red { color: var(--accent-red); }
 .event-card-action-green { color: var(--accent-green); }
 
 .event-card-details {
-    font-size: 0.65rem;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
     color: var(--text-secondary);
     word-break: break-word;
+    line-height: 1.5;
 }
 
 /* ===== Section labels ===== */
 
 .section-label {
-    font-size: 0.7rem;
+    font-family: var(--font-ui);
+    font-size: 0.72rem;
     font-weight: 600;
     color: var(--text-secondary);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 0.375rem;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.4rem;
 }
 
 /* ===== Empty states ===== */
 
 .empty-state {
-    padding: 1.5rem;
+    padding: 2rem 1.5rem;
     text-align: center;
     color: var(--text-muted);
-    font-style: italic;
-    font-size: 0.8rem;
+    font-family: var(--font-ui);
+    font-size: 0.85rem;
+    font-style: normal;
+    line-height: 1.6;
 }
 
 /* ===== Search highlight ===== */
 
 mark.search-match {
-    background: var(--accent-yellow);
-    color: var(--bg-primary);
-    padding: 0 0.125rem;
+    background: rgba(255, 179, 0, 0.25);
+    color: var(--accent-yellow);
+    padding: 0.1rem 0.2rem;
     border-radius: 2px;
+    font-weight: 600;
 }
 
 /* ===== Action button row ===== */

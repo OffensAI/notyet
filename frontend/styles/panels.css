@@ -9,12 +9,12 @@
 /* ===== Log panel internals ===== */
 
 .log-controls {
-    margin-bottom: 0.75rem;
-    padding-bottom: 0.75rem;
+    margin-bottom: 0.85rem;
+    padding-bottom: 0.85rem;
     border-bottom: 1px solid var(--border-default);
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0.55rem;
     flex-shrink: 0;
 }
 
@@ -28,21 +28,22 @@
 .log-container {
     flex: 1;
     overflow-y: auto;
-    padding: 0.5rem;
+    padding: 0.55rem;
     background: var(--bg-input);
     border: 1px solid var(--border-default);
-    border-radius: 0.25rem;
+    border-radius: var(--radius-sm);
     min-height: 0;
 }
 
 .log-stats {
     display: flex;
     justify-content: space-between;
-    margin-top: 0.5rem;
-    padding-top: 0.5rem;
+    margin-top: 0.55rem;
+    padding-top: 0.55rem;
     border-top: 1px solid var(--border-default);
     color: var(--text-muted);
-    font-size: 0.65rem;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
     flex-shrink: 0;
 }
 
@@ -51,15 +52,16 @@
 .event-count-row {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 0.75rem;
-    padding-bottom: 0.5rem;
+    gap: 0.65rem;
+    margin-bottom: 0.85rem;
+    padding-bottom: 0.6rem;
     border-bottom: 1px solid var(--border-default);
     flex-shrink: 0;
 }
 
 .event-count-label {
-    font-size: 0.75rem;
+    font-family: var(--font-ui);
+    font-size: 0.78rem;
     color: var(--text-secondary);
 }
 
@@ -72,25 +74,29 @@
 /* ===== Session selector internals ===== */
 
 .session-meta {
-    margin-top: 0.5rem;
-    padding: 0.5rem;
+    margin-top: 0.6rem;
+    padding: 0.65rem;
     background: var(--bg-input);
     border: 1px solid var(--border-default);
-    border-radius: 0.25rem;
-    font-size: 0.7rem;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-ui);
+    font-size: 0.78rem;
 }
 
 .session-meta-row {
     display: flex;
     justify-content: space-between;
-    padding: 0.125rem 0;
+    padding: 0.2rem 0;
 }
 
 .session-meta-label {
     color: var(--text-muted);
+    font-size: 0.72rem;
+    font-weight: 500;
 }
 
 .session-meta-value {
     color: var(--text-primary);
-    font-family: 'Courier New', Courier, monospace;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
 }

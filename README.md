@@ -2,7 +2,7 @@
 
 AWS IAM eventual consistency persistence tool. Exploits the ~4 second IAM propagation window to maintain access after defenders revoke credentials or modify policies.
 
-**By OFFENSAI Inc. | Eduard Agavriloae (saw_your_packet)**
+**By Eduard Agavriloae (saw_your_packet)**
 
 **For authorized security testing only. Unauthorized use may violate applicable laws.**
 
@@ -10,13 +10,32 @@ AWS IAM eventual consistency persistence tool. Exploits the ~4 second IAM propag
 
 When running, notyet monitors the compromised identity and reacts to defender actions in real-time:
 
-- **Credential rotation** -- detects deleted/disabled access keys and rotates to new credentials before the consistency window closes
-- **User recreation** -- if the IAM user is deleted, recreates it with the same name and fresh access keys
-- **Role rotation** -- for temporary (ASIA) credentials, creates and assumes new roles on revocation
-- **Policy persistence** -- attaches an admin inline policy and continuously restores it if removed
+- **Credential rotation** -- detects deleted/disabled access keys and rotates to a new user with a random name before the consistency window closes
+- **User deletion recovery** -- if the IAM user is deleted, detects via `GetUser` and creates a fresh user with new credentials
+- **Role deletion recovery** -- if the IAM role is deleted, detects via `GetRole` and creates a new role with fresh session credentials
+- **Role session refresh** -- proactively rotates role sessions before expiry (5 min buffer), and reactively handles `ExpiredToken` errors
+- **Policy persistence** -- attaches an admin inline policy and continuously restores it if removed or modified (validates policy content, not just name)
 - **Policy stripping** -- removes managed policies, other inline policies, and permission boundaries added by defenders
+- **Group membership removal** -- detects when the user is added to IAM groups (e.g., with deny policies) and removes the membership
 
-Health checks run every 5 seconds (S3 ListBuckets). Policy monitoring runs every 1 second.
+Health checks run every 5 seconds (S3 ListBuckets). Policy monitoring runs every 0.5 seconds.
+
+### Persistence matrix
+
+| Defender Action | Access Key (AKIA) | Role Session (ASIA) |
+|---|:---:|:---:|
+| Disable access key | Survives | N/A |
+| Delete access key | Survives | N/A |
+| Delete user | Survives | N/A |
+| Delete role | N/A | Survives |
+| Session expiry | N/A | Survives (proactive refresh) |
+| Add inline deny policy | Survives | Survives |
+| Attach managed deny policy | Survives | Survives |
+| Add permission boundary | Survives | Survives |
+| Modify notyet policy (Allow→Deny) | Survives | Survives |
+| Add user to group with deny | Survives | N/A |
+| Delete notyet inline policy | Survives | Survives |
+| Service Control Policy (SCP) | **Blocked** | **Blocked** |
 
 ## Installation
 

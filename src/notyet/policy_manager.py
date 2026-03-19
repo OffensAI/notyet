@@ -7,8 +7,10 @@ all other policies are removed. This prevents defenders from revoking
 permissions through policy changes.
 """
 
+import json
 import logging
-from typing import Optional
+from typing import Any, Dict, Optional
+from urllib.parse import unquote
 from botocore.exceptions import ClientError
 
 from .aws_clients import IAMClient
@@ -133,11 +135,19 @@ class PolicyManager:
                 return False
             
             is_attached = self.notyet_policy_name in policy_names
-            
+
             if not is_attached:
                 self.logger.warning(f"Notyet policy {self.notyet_policy_name} is NOT attached")
-            
-            return is_attached
+                return False
+
+            # Verify policy content hasn't been tampered with (e.g., Allow → Deny)
+            if not self._verify_policy_content(identity):
+                self.logger.warning(
+                    f"Notyet policy {self.notyet_policy_name} content has been modified"
+                )
+                return False
+
+            return True
         
         except ClientError as e:
             error_code = e.response.get('Error', {}).get('Code', 'Unknown')
@@ -197,6 +207,68 @@ class PolicyManager:
             self.logger.error(f"Error restoring policy: {str(e)}")
             raise
     
+    def _verify_policy_content(self, identity: CallerIdentity) -> bool:
+        """
+        Verify that the notyet policy document content matches the expected
+        AdministratorAccess policy. Detects tampering such as changing Allow to Deny.
+
+        Args:
+            identity: CallerIdentity object with identity information
+
+        Returns:
+            bool: True if policy content matches expected, False otherwise
+        """
+        try:
+            if identity.identity_type == "user":
+                response = self.iam._retry_with_backoff(
+                    'get_user_policy',
+                    UserName=identity.identity_name,
+                    PolicyName=self.notyet_policy_name
+                )
+            elif identity.identity_type == "role":
+                response = self.iam._retry_with_backoff(
+                    'get_role_policy',
+                    RoleName=identity.identity_name,
+                    PolicyName=self.notyet_policy_name
+                )
+            else:
+                return False
+
+            policy_doc = response.get('PolicyDocument', {})
+            # AWS may return the policy document as a URL-encoded JSON string
+            if isinstance(policy_doc, str):
+                policy_doc = json.loads(unquote(policy_doc))
+
+            return self._policy_matches(policy_doc)
+
+        except Exception as e:
+            self.logger.warning(f"Error verifying policy content: {str(e)}")
+            # If we can't verify, assume it's been tampered with
+            return False
+
+    def _policy_matches(self, policy_doc: Dict[str, Any]) -> bool:
+        """
+        Check if a policy document matches the expected AdministratorAccess policy.
+
+        Args:
+            policy_doc: The policy document dict to check
+
+        Returns:
+            bool: True if the policy grants Allow on all actions and resources
+        """
+        statements = policy_doc.get('Statement', [])
+        if not statements:
+            return False
+
+        for stmt in statements:
+            effect = stmt.get('Effect', '')
+            action = stmt.get('Action', '')
+            resource = stmt.get('Resource', '')
+            if effect == 'Allow' and action == '*' and resource == '*':
+                return True
+
+        return False
+
     def _remove_other_inline_policies(self, identity: CallerIdentity) -> None:
         """
         Remove all inline policies except the notyet policy.

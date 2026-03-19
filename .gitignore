@@ -78,5 +78,9 @@ uv.lock
 tests/
 examples/
 
+# Documentation drafts
+extended-documentation.txt
+
 # Claude Code
 .claude/
+CLAUDE.md

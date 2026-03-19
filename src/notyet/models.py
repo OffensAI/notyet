@@ -64,26 +64,34 @@ class CallerIdentity:
     def identity_type(self) -> str:
         """
         Determines the identity type based on the ARN.
-        
+
         Returns:
-            str: 'user' if ARN contains ':user/', 'role' if ARN contains ':role/', 
-                 'unknown' otherwise
+            str: 'user' if ARN contains ':user/', 'role' if ARN contains ':role/'
+                 or ':assumed-role/', 'unknown' otherwise
         """
         if ":user/" in self.arn:
             return "user"
-        elif ":role/" in self.arn:
+        elif ":role/" in self.arn or ":assumed-role/" in self.arn:
             return "role"
         else:
             return "unknown"
-    
+
     @property
     def identity_name(self) -> str:
         """
         Extracts the user or role name from the ARN.
-        
+
+        For users: arn:aws:iam::123:user/my-user → my-user
+        For roles: arn:aws:iam::123:role/my-role → my-role
+        For assumed roles: arn:aws:sts::123:assumed-role/my-role/session → my-role
+
         Returns:
-            str: The name portion of the ARN (last segment after '/')
+            str: The name portion of the ARN
         """
+        if ":assumed-role/" in self.arn:
+            # arn:aws:sts::123:assumed-role/role-name/session-name
+            parts = self.arn.split("/")
+            return parts[-2]  # role name, not session name
         return self.arn.split("/")[-1]
 
 

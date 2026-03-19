@@ -166,13 +166,31 @@ class PersistenceOrchestrator:
             # Step 3: Save resource tracker state
             self.resource_tracker.save(self.tracker_path)
             
-            # Step 4: Start monitoring engine
+            # Step 4: For temporary credentials, rotate immediately to get fresh
+            # session with known expiration (profile-loaded creds don't have expiration)
+            if self.credentials.is_temporary:
+                if self.credentials.expiration:
+                    self.monitoring_engine.session_expiration = self.credentials.expiration
+                else:
+                    self.event_logger.log_event(
+                        "INFO",
+                        "Temporary credentials without known expiration — rotating to get fresh session",
+                        {}
+                    )
+                    await self.rotate_credentials()
+                    self.event_logger.log_event(
+                        "INFO",
+                        f"Fresh session acquired (expires: {self.monitoring_engine.session_expiration})",
+                        {"expiration": str(self.monitoring_engine.session_expiration)}
+                    )
+
+            # Step 5: Start monitoring engine
             self.event_logger.log_event(
                 "INFO",
                 "Starting monitoring engine",
                 {}
             )
-            
+
             # Run monitoring engine (this will block until stopped)
             await self.monitoring_engine.start(
                 identity=self.identity,
@@ -280,10 +298,18 @@ class PersistenceOrchestrator:
             sts_client = STSClient(new_credentials)
             self.identity = sts_client.get_caller_identity()
             
-            # Update monitoring engine clients and identity
+            # Update ALL components with new IAM client
             self.monitoring_engine.s3 = self.s3_client
             self.monitoring_engine.identity = self.identity
             self.policy_manager.iam = self.iam_client
+            self.access_key_persistence.iam = self.iam_client
+            self.role_persistence.iam = self.iam_client
+
+            # Update session expiration for temporary credentials
+            if new_credentials.is_temporary and new_credentials.expiration:
+                self.monitoring_engine.session_expiration = new_credentials.expiration
+            else:
+                self.monitoring_engine.session_expiration = None
             
             # Re-establish policy for new identity
             policy_name = self.policy_manager.establish_policy(self.identity)

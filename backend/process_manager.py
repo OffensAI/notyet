@@ -268,13 +268,18 @@ class ProcessManager:
                 for line in process.stderr:
                     if self._stop_streaming.is_set():
                         break
-                    
+
                     if line:
                         stripped = line.strip()
-                        # Only surface ERROR/CRITICAL from stderr as events;
-                        # INFO/DEBUG/WARNING and tracebacks are filtered out since
-                        # structured JSON events on stdout cover all important actions
-                        if ' - ERROR - ' not in stripped and ' - CRITICAL - ' not in stripped:
+                        if not stripped:
+                            continue
+
+                        # Surface ERROR/CRITICAL from Python logging,
+                        # plus any line containing "Error:" (Click CLI error messages)
+                        is_log_error = ' - ERROR - ' in stripped or ' - CRITICAL - ' in stripped
+                        is_cli_error = 'Error:' in stripped
+
+                        if not is_log_error and not is_cli_error:
                             continue
 
                         event = self.log_parser.parse_line(line)

@@ -4,7 +4,6 @@ Cleanup functionality for removing notyet resources from AWS.
 This module provides functions to identify, display, and delete IAM resources
 created by the notyet tool (identified by the "notyet-" prefix).
 
-**Validates: Requirements 17.1, 17.2, 17.3, 17.4, 17.5, 17.6, 17.7, 17.8**
 """
 
 import logging

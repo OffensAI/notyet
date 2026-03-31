@@ -178,16 +178,6 @@ uv run --with-requirements backend/requirements.txt uvicorn backend.app:app --ho
 
 Then open `http://localhost:8000` in your browser.
 
-## MCP Server (work in progress)
-
-notyet can run as an MCP server, exposing persistence techniques as callable tools via the Model Context Protocol for integration with AI-assisted red team workflows:
-
-```bash
-uv run notyet --mcp-server
-```
-
-This mode is under active development and not yet (hehe) feature-complete.
-
 ## Acknowledgements
 
 This tool was hardened through red-vs-blue collaboration with [Nigel Sood](https://www.linkedin.com/in/nigel-sood/), Cloud Privilege Threat Researcher at [Sonrai Security](http://sonraisecurity.com/). Nigel tested notyet from the perspective of an incident responder attempting to contain a compromised identity, providing detailed feedback on persistence gaps and edge cases that directly shaped the tool's monitoring and rotation capabilities.

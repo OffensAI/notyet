@@ -28,7 +28,6 @@ dependencies = [
     "boto3>=1.28.0",
     "click>=8.1.0",
     "colorama>=0.4.6",
-    "mcp>=0.1.0",
 ]
 
 [project.optional-dependencies]

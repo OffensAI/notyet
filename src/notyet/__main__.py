@@ -1,10 +1,8 @@
 """
 Main entry point for the notyet CLI application.
 
-This module implements the CLI interface using Click, supporting both CLI mode
-(continuous monitoring) and MCP server mode (programmatic interface).
+This module implements the CLI interface using Click for continuous monitoring mode.
 
-**Validates: Requirements 1.1, 1.2, 2.1, 7.3, 7.4, 7.6, 15.1, 15.2, 15.3, 15.5**
 """
 
 import sys
@@ -18,7 +16,6 @@ from colorama import init as colorama_init, Fore, Style
 
 from notyet.credential_manager import CredentialManager
 from notyet.persistence_orchestrator import PersistenceOrchestrator
-from notyet.mcp_server import MCPServer
 from notyet.cleanup import (
     list_notyet_resources,
     display_resources,
@@ -55,7 +52,7 @@ def setup_logging(debug: bool = False) -> None:
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         handlers=[
             logging.FileHandler(log_file),
-            logging.StreamHandler(sys.stderr)  # Use stderr to avoid interfering with MCP
+            logging.StreamHandler(sys.stderr)
         ]
     )
 
@@ -137,12 +134,6 @@ def require_acknowledgment() -> bool:
     help='Output events as JSON (one JSON object per line) for web interface integration'
 )
 @click.option(
-    '--mcp-server',
-    is_flag=True,
-    default=False,
-    help='Run in MCP server mode (exposes persistence techniques as tools)'
-)
-@click.option(
     '--debug',
     is_flag=True,
     default=False,
@@ -164,30 +155,20 @@ def cli(
     output_profile: Optional[str],
     exit_on_access_denied: bool,
     json_output: bool,
-    mcp_server: bool,
     debug: bool,
     confirm_run: bool
 ):
     """
-    notyet - AWS IAM Eventual Consistency Persistence POC Tool
-    
+    notyet - AWS IAM Eventual Consistency Persistence Tool
+
     This tool demonstrates AWS IAM eventual consistency vulnerabilities by
     exploiting the ~4 second propagation window where IAM changes don't take
     effect immediately.
-    
-    Two modes of operation:
-    
+
     \b
-    1. CLI Mode (default): Continuous monitoring with real-time console output
-       Example: notyet --profile my-profile --output-profile persistence-profile
-    
-    \b
-    2. MCP Server Mode: Exposes persistence techniques as callable tools
-       Example: notyet --mcp-server
-    
+    Example: notyet --profile my-profile --output-profile persistence-profile
+
     Use 'notyet cleanup' to remove all notyet resources from your AWS account.
-    
-    **Validates: Requirements 1.1, 1.2, 2.1, 7.3, 7.4, 7.6, 15.1, 15.2, 15.3, 15.5**
     """
     setup_logging(debug)
     
@@ -195,19 +176,7 @@ def cli(
     if ctx.invoked_subcommand is not None:
         return
     
-    # MCP Server Mode
-    if mcp_server:
-        logger.info("Starting in MCP server mode")
-        
-        # Display warnings (but don't require acknowledgment for MCP mode)
-        display_warnings()
-        
-        # Start MCP server
-        mcp = MCPServer()
-        asyncio.run(mcp.run())
-        return
-    
-    # CLI Mode - require output-profile
+    # Require output-profile
     if not output_profile:
         click.echo(
             f"{Fore.RED}Error: --output-profile is required for CLI mode.{Style.RESET_ALL}\n"

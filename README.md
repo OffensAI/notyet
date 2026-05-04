@@ -184,6 +184,8 @@ Then open `http://localhost:8000` in your browser.
 
 This tool was hardened through red-vs-blue collaboration with [Nigel Sood](https://www.linkedin.com/in/nigel-sood/), Cloud Privilege Threat Researcher at [Sonrai Security](http://sonraisecurity.com/). Nigel tested notyet from the perspective of an incident responder attempting to contain a compromised identity, providing detailed feedback on persistence gaps and edge cases that directly shaped the tool's monitoring and rotation capabilities.
 
+Check out his article on what works and what doesn't work against the tool: [Fighting Eventual Consistency-Based Persistence - An Analysis of notyet]https://sonraisecurity.com/blog/fighting-eventual-consistency-based-persistence-an-analysis-of-notyet/
+
 ## License
 
 MIT -- see [LICENSE](LICENSE).
